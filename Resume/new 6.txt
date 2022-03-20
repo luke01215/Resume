@@ -1,0 +1,21 @@
+What is windows core?
+
+Walk me through how you would help a customer determine if there is a problem...
+Specific answer Wireshark
+
+What language do you prefer?
+Java
+
+How do you comment in Powershell?
+Backtick
+
+In Kusto what would you use to take a look at Javascript?
+
+What does the S stand for in HTTPS?
+
+Walk me through HTTPS and how it makes it secure?
+
+Javascript Object Notation (JSON) 
+
+Similarities to IIS and App Service?
+
