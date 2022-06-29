@@ -1,8 +1,9 @@
 param (
-     [string]$file1 = "G:\GIT\self\Resume\powershell\web.Config"
-    ,[string]$file2 = "G:\GIT\self\Resume\powershell\web copy.Config"
+     [string]$file1 = "C:\LCD\Test\ConfigFiles\PNS\DEV\web.Config"
+    ,[string]$file2 = "C:\LCD\Test\ConfigFiles\PNS\UAT\web.Config"
 )
-function displayNodes ($node, $path, $list, $display) {
+function displayNodes ($node, $path, $list, $display, $fileName) {
+    $localFileName = $fileName
     $xpath = $path
     $localList = $list
     if ($node.NodeType -eq "Comment") {
@@ -14,7 +15,16 @@ function displayNodes ($node, $path, $list, $display) {
         if ($display) {
             Write-Output "Type[$node_type] | Name[$node_name] | Path[$xpath]"
         }
-        $list.Add($xpath) | Out-Null
+        $xmlObject = New-Object -TypeName PSObject -Property @{
+            PK = "$node_type|$node_name|$xpath"
+            FileName = "$localFileName"
+            NodeType = "$node_type"
+            NodeName = "$node_name"
+            xPath = "$xpath"
+            AttributeName = ""
+            AttributeValue = ""
+        }
+        $list.Add($xmlObject) | Out-Null
     }
 
     if ($null -ne $node.Attributes) {
@@ -26,14 +36,22 @@ function displayNodes ($node, $path, $list, $display) {
             if ($display) {
                 Write-Output "`tAttribute Name[$attribute_name] | Attribute Value[$attribute_value] | Path[$attributePath]"
             }
-            $entry = $attributePath + "," + $attribute_value
-            $list.Add($entry) | Out-Null
+            $xmlObject = New-Object -TypeName PSObject -Property @{
+                PK = "$node_type|$node_name|$attributePath|$attribute_name|$attribute_value"
+                FileName = "$localFileName"
+                NodeType = "$node_type"
+                NodeName = "$node_name"
+                xPath = "$attributePath"
+                AttributeName = "$attribute_name"
+                AttributeValue = "$attribute_value"
+            }
+            $list.Add($xmlObject) | Out-Null
         }
     }
 
     $node_children = $node.ChildNodes
     foreach($child in $node_children) {
-        displayNodes $child $xpath $localList
+        displayNodes $child $xpath $localList $false $localFileName
     }
 }
 try {
@@ -42,17 +60,19 @@ try {
     
     [xml]$xml = Get-Content -Path $file1
     $rootNode = $xml.DocumentElement
-    displayNodes $rootNode "" $xmlList1 $false
+    displayNodes $rootNode "" $xmlList1 $false $file1
     
     [xml]$xml2 = Get-Content -Path $file2
     $rootNode2 = $xml2.DocumentElement
-    displayNodes $rootNode2 "" $xmlList2 $false
+    displayNodes $rootNode2 "" $xmlList2 $false $file2
     
     # https://stackoverflow.com/questions/8609204/union-and-intersection-in-powershell
-    $union = Compare-Object $xmlList1 $xmlList2 -PassThru -IncludeEqual
-    $intersection = Compare-Object $xmlList1 $xmlList2 -PassThru
+    $xmlCompareList1 = $xmlList1 | Select-Object -ExcludeProperty "FileName"
+    $xmlCompareList2 = $xmlList2 | Select-Object -ExcludeProperty "FileName"
+
+    #$union = Compare-Object $xmlCompareList1 $xmlCompareList2 -PassThru -IncludeEqual
+    $intersection = Compare-Object $xmlCompareList1 $xmlCompareList2 -PassThru
     
-    #Write-Output $union
     foreach($mismatch in $intersection) {
         $side = $mismatch | Select-Object -ExpandProperty "SideIndicator"
         if ($side -eq "=>") {
