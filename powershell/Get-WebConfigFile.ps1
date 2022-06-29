@@ -6,7 +6,7 @@ function displayNodes ($node, $path) {
     if ($node.NodeType -eq "Comment") {
     }
     else {
-        $node_name = $node.Name
+        $node_name = $node.LocalName
         $node_type = $node.NodeType
         $xpath = $xpath + "/" + $node_name
         Write-Output "Type[$node_type] | Name[$node_name] | Path[$xpath]"
@@ -31,4 +31,5 @@ function displayNodes ($node, $path) {
 [xml]$xml = Get-Content -Path $fileName
 $rootNode = $xml.DocumentElement
 displayNodes $rootNode
-Select-Xml -Path $fileName -XPath "/configuration/system.web/httpModules/FileAuthorization/@name" | Select-Object -ExpandProperty Node
+#$results = Select-Xml -Path $fileName -XPath "/configuration/system.webServer/handlers/add/@name"
+#Write-Output $results
