@@ -1,27 +1,28 @@
 param (
-     [string]$file1 = "C:\LCD\Test\ConfigFiles\PNS\DEV\web.Config"
-    ,[string]$file2 = "C:\LCD\Test\ConfigFiles\PNS\UAT\web.Config"
+    [string]$file1 = "C:\LCD\Test\ConfigFiles\PNS\DEV\web.Config"
+    , [string]$file2 = "C:\LCD\Test\ConfigFiles\PNS\UAT\web.Config"
 )
 function displayNodes ($node, $path, $list, $display, $fileName) {
     $localFileName = $fileName
     $xpath = $path
     $localList = $list
+    $localDisplay = $display
     if ($node.NodeType -eq "Comment") {
     }
     else {
         $node_name = $node.LocalName
         $node_type = $node.NodeType
         $xpath = $xpath + "/" + $node_name
-        if ($display) {
-            Write-Output "Type[$node_type] | Name[$node_name] | Path[$xpath]"
+        if ($localDisplay) {
+            Write-Output "Path[$xpath] | Type[$node_type] | Name[$node_name]"
         }
         $xmlObject = New-Object -TypeName PSObject -Property @{
-            PK = "$node_type|$node_name|$xpath"
-            FileName = "$localFileName"
-            NodeType = "$node_type"
-            NodeName = "$node_name"
-            xPath = "$xpath"
-            AttributeName = ""
+            PK             = "$node_type|$node_name|$xpath"
+            FileName       = "$localFileName"
+            NodeType       = "$node_type"
+            NodeName       = "$node_name"
+            xPath          = "$xpath"
+            AttributeName  = ""
             AttributeValue = ""
         }
         $list.Add($xmlObject) | Out-Null
@@ -29,20 +30,20 @@ function displayNodes ($node, $path, $list, $display, $fileName) {
 
     if ($null -ne $node.Attributes) {
         $node_attributes = $node.Attributes
-        foreach($attribute in $node_attributes) {
+        foreach ($attribute in $node_attributes) {
             $attribute_name = $attribute.Name
             $attribute_value = $attribute.Value
             $attributePath = $xpath + "/@" + $attribute_name
-            if ($display) {
-                Write-Output "`tAttribute Name[$attribute_name] | Attribute Value[$attribute_value] | Path[$attributePath]"
+            if ($localDisplay) {
+                Write-Output "Path[$attributePath] | Attribute Name[$attribute_name] | Attribute Value[$attribute_value]"
             }
             $xmlObject = New-Object -TypeName PSObject -Property @{
-                PK = "$node_type|$node_name|$attributePath|$attribute_name|$attribute_value"
-                FileName = "$localFileName"
-                NodeType = "$node_type"
-                NodeName = "$node_name"
-                xPath = "$attributePath"
-                AttributeName = "$attribute_name"
+                PK             = "$node_type|$node_name|$attributePath|$attribute_name|$attribute_value"
+                FileName       = "$localFileName"
+                NodeType       = "$node_type"
+                NodeName       = "$node_name"
+                xPath          = "$attributePath"
+                AttributeName  = "$attribute_name"
                 AttributeValue = "$attribute_value"
             }
             $list.Add($xmlObject) | Out-Null
@@ -50,8 +51,8 @@ function displayNodes ($node, $path, $list, $display, $fileName) {
     }
 
     $node_children = $node.ChildNodes
-    foreach($child in $node_children) {
-        displayNodes $child $xpath $localList $false $localFileName
+    foreach ($child in $node_children) {
+        displayNodes $child $xpath $localList $localDisplay $localFileName
     }
 }
 try {
@@ -67,22 +68,49 @@ try {
     displayNodes $rootNode2 "" $xmlList2 $false $file2
     
     # https://stackoverflow.com/questions/8609204/union-and-intersection-in-powershell
-    $xmlCompareList1 = $xmlList1 | Select-Object -ExcludeProperty "FileName"
-    $xmlCompareList2 = $xmlList2 | Select-Object -ExcludeProperty "FileName"
+    $xmlCompareList1 = $xmlList1 | Select-Object -Property "PK"
+    foreach($key in $xmlCompareList1) {
+        Write-Output $key.PK
+    }
+    $xmlCompareList2 = $xmlList2 | Select-Object -Property "PK"
 
-    #$union = Compare-Object $xmlCompareList1 $xmlCompareList2 -PassThru -IncludeEqual
-    $intersection = Compare-Object $xmlCompareList1 $xmlCompareList2 -PassThru
-    
-    foreach($mismatch in $intersection) {
-        $side = $mismatch | Select-Object -ExpandProperty "SideIndicator"
-        if ($side -eq "=>") {
-            Write-Output "File: $file2 | Difference: $mismatch"
+    $left = New-Object -TypeName 'System.Collections.ArrayList'
+    $both = New-Object -TypeName 'System.Collections.ArrayList'
+    $right = New-Object -TypeName 'System.Collections.ArrayList'
+
+    foreach ($key in $xmlCompareList1) {
+        $match = $false
+        $pk = $key.PK
+        foreach ($compareKey in $xmlCompareList2) {
+            $pk2 = $compareKey.PK
+            if ($pk -eq $pk2) {
+                $both.Add($pk) | Out-Null
+                $match = $true
+                break;
+            }
         }
-        else {
-            Write-Output "File: $file1 | Difference: $mismatch"
+        if (-not($match)) {
+            $left.Add($pk) | Out-Null
         }
     }
-   
+
+    foreach ($key in $xmlCompareList2) {
+        $match = $false
+        $pk = $key.PK
+        foreach ($compareKey in $xmlCompareList1) {
+            $pk2 = $compareKey.PK
+            if ($pk -eq $pk2) {
+                $match = $true
+                break;
+            }
+        }
+        if (-not($match)) {
+            $right.Add($pk) | Out-Null
+        }
+    }
+    Write-Output Test
+    
+  
 }
 catch {
     Write-Error $_.Exception.Message
