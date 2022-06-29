@@ -36,29 +36,34 @@ function displayNodes ($node, $path, $list, $display) {
         displayNodes $child $xpath $localList
     }
 }
-
-$xmlList1 = New-Object -TypeName 'System.Collections.ArrayList'
-$xmlList2 = New-Object -TypeName 'System.Collections.ArrayList'
-
-[xml]$xml = Get-Content -Path $file1
-$rootNode = $xml.DocumentElement
-displayNodes $rootNode "" $xmlList1 $false
-
-[xml]$xml2 = Get-Content -Path $file2
-$rootNode2 = $xml2.DocumentElement
-displayNodes $rootNode2 "" $xmlList2 $false
-
-# https://stackoverflow.com/questions/8609204/union-and-intersection-in-powershell
-$union = Compare-Object $xmlList1 $xmlList2 -PassThru -IncludeEqual
-$intersection = Compare-Object $xmlList1 $xmlList2 -PassThru
-
-#Write-Output $union
-foreach($mismatch in $intersection) {
-    $side = $mismatch | Select-Object -ExpandProperty "SideIndicator"
-    if ($side -eq "=>") {
-        Write-Output "File: $file2 | Difference: $mismatch"
+try {
+    $xmlList1 = New-Object -TypeName 'System.Collections.ArrayList'
+    $xmlList2 = New-Object -TypeName 'System.Collections.ArrayList'
+    
+    [xml]$xml = Get-Content -Path $file1
+    $rootNode = $xml.DocumentElement
+    displayNodes $rootNode "" $xmlList1 $false
+    
+    [xml]$xml2 = Get-Content -Path $file2
+    $rootNode2 = $xml2.DocumentElement
+    displayNodes $rootNode2 "" $xmlList2 $false
+    
+    # https://stackoverflow.com/questions/8609204/union-and-intersection-in-powershell
+    $union = Compare-Object $xmlList1 $xmlList2 -PassThru -IncludeEqual
+    $intersection = Compare-Object $xmlList1 $xmlList2 -PassThru
+    
+    #Write-Output $union
+    foreach($mismatch in $intersection) {
+        $side = $mismatch | Select-Object -ExpandProperty "SideIndicator"
+        if ($side -eq "=>") {
+            Write-Output "File: $file2 | Difference: $mismatch"
+        }
+        else {
+            Write-Output "File: $file1 | Difference: $mismatch"
+        }
     }
-    else {
-        Write-Output "File: $file1 | Difference: $mismatch"
-    }
+   
+}
+catch {
+    Write-Error $_.Exception.Message
 }
