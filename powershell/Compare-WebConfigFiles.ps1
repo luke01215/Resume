@@ -16,16 +16,6 @@ function displayNodes ($node, $path, $list, $display, $fileName) {
         if ($localDisplay) {
             Write-Output "Path[$xpath] | Type[$node_type] | Name[$node_name]"
         }
-        #$xmlObject = New-Object -TypeName PSObject -Property @{
-        #    PK             = "$node_type|$node_name|$xpath"
-        #    FileName       = "$localFileName"
-        #    NodeType       = "$node_type"
-        #    NodeName       = "$node_name"
-        #    xPath          = "$xpath"
-        #    AttributeName  = ""
-        #    AttributeValue = ""
-        #}
-        #$list.Add($xmlObject) | Out-Null
     }
 
     if ($null -ne $node.Attributes) {
@@ -40,7 +30,7 @@ function displayNodes ($node, $path, $list, $display, $fileName) {
                 Write-Output "Path[$attributePath] | Attribute Name[$attribute_name] | Attribute Value[$attribute_value]"
             }
             $xmlObject = New-Object -TypeName PSObject -Property @{
-                PK             = "$node_type|$node_name|$attributePath|$attribute_name|$attribute_value"
+                PK_Attribute             = "$node_type|$node_name|$attributePath|$attribute_name|$attribute_value"
                 FileName       = "$localFileName"
                 NodeType       = "$node_type"
                 NodeName       = "$node_name"
@@ -52,13 +42,21 @@ function displayNodes ($node, $path, $list, $display, $fileName) {
             $attributeList.Add($xmlObject) | Out-Null
         }
         if($attributeList.Count -ne 0) {
-            if ($attributeList.Count -eq 1) {
-                $list.Add($attributeList) | Out-Null    
-            }
-            else {
+            $PK = ""
+            if ($attributeList.Count -gt 1) {
                 [System.Collections.ArrayList]$attributeList = $attributeList | Sort-Object -Property AttributeName 
-                $list.Add($attributeList) | Out-Null
             }
+            foreach($attribute in $attributeList) {
+                if ($PK -eq "") {
+                    $PK = $PK + $attribute.rootXpath + "/@"
+                }
+                $PK = $PK + "|$($attribute.AttributeName)[$($attribute.AttributeValue)]"
+            }
+            $element = New-Object -TypeName PSObject -Property @{
+                PK = "$PK"
+                AttributeList = $attributeList
+            }
+            $list.Add($element) | Out-Null
         }
     }
 
@@ -79,7 +77,6 @@ try {
     $rootNode2 = $xml2.DocumentElement
     displayNodes $rootNode2 "" $xmlList2 $false $file2
     
-    # https://stackoverflow.com/questions/8609204/union-and-intersection-in-powershell
     $xmlCompareList1 = $xmlList1 | Select-Object -Property "PK"
     foreach($key in $xmlCompareList1) {
         Write-Output $key.PK
@@ -120,7 +117,20 @@ try {
             $right.Add($pk) | Out-Null
         }
     }
-    Write-Output Test
+    
+    Write-Output "---------------------------------------"
+    Write-Output "File: $file1"
+    Write-Output "---"
+    foreach($line in $left) {
+        Write-Output $line
+    }
+    Write-Output "---------------------------------------"
+    Write-Output "File: $file2"
+    Write-Output "---"
+    foreach($line in $right) {
+        Write-Output $line
+    }
+
     
   
 }
