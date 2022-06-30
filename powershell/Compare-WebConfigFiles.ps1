@@ -1,6 +1,6 @@
 param (
-    [string]$file1 = "C:\LCD\Test\ConfigFiles\PNS\DEV\web.Config"
-    , [string]$file2 = "C:\LCD\Test\ConfigFiles\PNS\UAT\web.Config"
+    [string]$file1 = "C:\LCD\GIT\self\Resume\powershell\web.Config"
+    , [string]$file2 = "C:\LCD\GIT\self\Resume\powershell\web copy.Config"
 )
 function displayNodes ($node, $path, $list, $display, $fileName) {
     $localFileName = $fileName
@@ -16,20 +16,22 @@ function displayNodes ($node, $path, $list, $display, $fileName) {
         if ($localDisplay) {
             Write-Output "Path[$xpath] | Type[$node_type] | Name[$node_name]"
         }
-        $xmlObject = New-Object -TypeName PSObject -Property @{
-            PK             = "$node_type|$node_name|$xpath"
-            FileName       = "$localFileName"
-            NodeType       = "$node_type"
-            NodeName       = "$node_name"
-            xPath          = "$xpath"
-            AttributeName  = ""
-            AttributeValue = ""
-        }
-        $list.Add($xmlObject) | Out-Null
+        #$xmlObject = New-Object -TypeName PSObject -Property @{
+        #    PK             = "$node_type|$node_name|$xpath"
+        #    FileName       = "$localFileName"
+        #    NodeType       = "$node_type"
+        #    NodeName       = "$node_name"
+        #    xPath          = "$xpath"
+        #    AttributeName  = ""
+        #    AttributeValue = ""
+        #}
+        #$list.Add($xmlObject) | Out-Null
     }
 
     if ($null -ne $node.Attributes) {
         $node_attributes = $node.Attributes
+        $attributeList = New-Object -TypeName 'System.Collections.ArrayList'
+
         foreach ($attribute in $node_attributes) {
             $attribute_name = $attribute.Name
             $attribute_value = $attribute.Value
@@ -42,11 +44,21 @@ function displayNodes ($node, $path, $list, $display, $fileName) {
                 FileName       = "$localFileName"
                 NodeType       = "$node_type"
                 NodeName       = "$node_name"
+                rootXpath      = "$xpath"
                 xPath          = "$attributePath"
                 AttributeName  = "$attribute_name"
                 AttributeValue = "$attribute_value"
             }
-            $list.Add($xmlObject) | Out-Null
+            $attributeList.Add($xmlObject) | Out-Null
+        }
+        if($attributeList.Count -ne 0) {
+            if ($attributeList.Count -eq 1) {
+                $list.Add($attributeList) | Out-Null    
+            }
+            else {
+                [System.Collections.ArrayList]$attributeList = $attributeList | Sort-Object -Property AttributeName 
+                $list.Add($attributeList) | Out-Null
+            }
         }
     }
 
