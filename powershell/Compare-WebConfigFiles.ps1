@@ -130,9 +130,6 @@ try {
     foreach($line in $right) {
         Write-Output $line
     }
-
-    
-  
 }
 catch {
     Write-Error $_.Exception.Message
