@@ -20,7 +20,6 @@ Function ConnectToAzure  {
 
 $ErrorView = "NormalView"
 $ErrorActionPreference = "Stop"
-$global:successArray = [System.Collections.ArrayList]@()
 
 try {
     Install-Module -Name Az -Force -AllowClobber
